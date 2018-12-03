@@ -30,7 +30,7 @@ the external network accessing the game intranet without barriers.
 
         docker run -v $OVPN_DATA:/etc/openvpn -d -p 1194:1194/udp --cap-add=NET_ADMIN --name ctf_vpn ctf_vpn_docker
 
-* Add new iroute to access the intranet and restart the docker.
+* Add new iroute to access the intranet and restart the docker. (You have to figure out the CTF subnet range to make the VPN work.)
 
         docker run -v $OVPN_DATA:/etc/openvpn --log-driver=none --rm -it ctf_vpn_docker ovpn_addiroute NETWORK_ID MASK
         docker restart ctf_vpn
