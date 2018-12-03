@@ -56,7 +56,7 @@ the external network accessing the game intranet without barriers.
         iptables -t filter -I FORWARD -i tun -o eth0 -j ACCEPT  # Attention: eth0 is your WAN port, you should modify the interface to fit your need.
         iptables -t nat -I POSTROUTING -o eth0 -j MASQUERADE    # Again, eth0 is your WAN interface.
 
-* Configure the client of offline player (used the file `player.ovpn` generated in last step)
+* Configure the client of offline player (used the file `player.ovpn` generated in last step, and you should distribute the `player.ovpn` file to your team members.)
 
         # Install OpenVPN client
         apt update && apt install openvpn
