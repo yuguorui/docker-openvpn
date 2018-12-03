@@ -47,6 +47,9 @@ the external network accessing the game intranet without barriers.
 
 ## Next Steps
 
+### Network topology
+![Network topology](imgs/Network_topology.svg)
+
 ### More Reading
 
 Miscellaneous write-ups for advanced configurations are available in the
