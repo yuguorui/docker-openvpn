@@ -10,6 +10,7 @@ the external network accessing the game intranet without barriers.
 * Build the docker in order to use it.
 
         git clone https://github.com/yuguorui/docker-openvpn.git
+        cd docker-openvpn/
         docker build . -t ctf_vpn_docker
 
 * Pick a name for the `$OVPN_DATA` data volume container. It's recommended to
@@ -23,12 +24,12 @@ the external network accessing the game intranet without barriers.
   and certificates.
 
         docker volume create --name $OVPN_DATA
-        docker run -v $OVPN_DATA:/etc/openvpn --log-driver=none --rm ctf_vpn_docker -u udp://YOUR_VPS_ADDRESS nopass
-        docker run -v $OVPN_DATA:/etc/openvpn --log-driver=none --rm -it ctf_vpn_docker ovpn_initpki
+        docker run -v $OVPN_DATA:/etc/openvpn --log-driver=none --rm ctf_vpn_docker ovpn_genconfig -u udp://YOUR_VPS_ADDRESS:4242
+        docker run -v $OVPN_DATA:/etc/openvpn --log-driver=none --rm -it ctf_vpn_docker ovpn_initpki nopass
 
 * Start OpenVPN server process
 
-        docker run -v $OVPN_DATA:/etc/openvpn -d -p 1194:1194/udp --cap-add=NET_ADMIN --name ctf_vpn ctf_vpn_docker
+        docker run -v $OVPN_DATA:/etc/openvpn -d -p 4242:1194/udp --cap-add=NET_ADMIN --name ctf_vpn ctf_vpn_docker
 
 * Add new iroute to access the intranet and restart the docker. (You have to figure out the CTF subnet range to make the VPN work.)
 
@@ -45,7 +46,7 @@ the external network accessing the game intranet without barriers.
         docker run -v $OVPN_DATA:/etc/openvpn --log-driver=none --rm -it ctf_vpn_docker easyrsa build-client-full player nopass
         docker run -v $OVPN_DATA:/etc/openvpn --log-driver=none --rm ctf_vpn_docker ovpn_getclient player > player.ovpn
 
-* Configure the Server in the playing field (used the file `router.ovpn` generated in last step)
+* Configure the Server(router or PC) in the playing field (used the file `router.ovpn` generated in last step)
 
         # Install OpenVPN client
         apt update && apt install openvpn
@@ -62,6 +63,12 @@ the external network accessing the game intranet without barriers.
         # Run VPN client
         nohup openvpn --config player.ovpn &
         # It's OK!
+
+* Clear the iroute to reconfigure
+
+        docker run -v $OVPN_DATA:/etc/openvpn --log-driver=none --rm -it ctf_vpn_docker ovpn_cleariroute
+        docker restart ctf_vpn
+        # Now, you can re-add new iroute rules.
 
 ## Next Steps
 
@@ -97,11 +104,8 @@ If you prefer to use `docker-compose` please refer to the [documentation](docs/d
 
 * Run through a barrage of debugging checks on the client if things don't just work
 
-        $ ping 192.168.254.1 # checks if you can connect to the VPN server
+        $ ping 192.168.255.1 # checks if you can connect to the VPN server
         $ ping ${CTF_SUBNET} # checks if you can connect to the CTF subnet
-        $ ping 8.8.8.8    # checks connectivity without touching name resolution
-        $ dig google.com  # won't use the search directives in resolv.conf
-        $ nslookup google.com # will use search
 
 * Consider setting up a [systemd service](/docs/systemd.md) for automatic
   start-up at boot time and restart in the event the OpenVPN daemon or Docker
