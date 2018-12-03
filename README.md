@@ -45,6 +45,24 @@ the external network accessing the game intranet without barriers.
         docker run -v $OVPN_DATA:/etc/openvpn --log-driver=none --rm -it ctf_vpn_docker easyrsa build-client-full player nopass
         docker run -v $OVPN_DATA:/etc/openvpn --log-driver=none --rm ctf_vpn_docker ovpn_getclient player > player.ovpn
 
+* Configure the Server in the playing field (used the file `router.ovpn` generated in last step)
+
+        # Install OpenVPN client
+        apt update && apt install openvpn
+        # Run VPN client
+        nohup openvpn --config router.ovpn &
+        # Configure the iptables
+        iptables -t filter -I FORWARD -i tun -o eth0 -j ACCEPT  # Attention: eth0 is your WAN port, you should modify the interface to fit your need.
+        iptables -t nat -I POSTROUTING -o eth0 -j MASQUERADE    # Again, eth0 is your WAN interface.
+
+* Configure the client of offline player (used the file `player.ovpn` generated in last step)
+
+        # Install OpenVPN client
+        apt update && apt install openvpn
+        # Run VPN client
+        nohup openvpn --config player.ovpn &
+        # It's OK!
+
 ## Next Steps
 
 ### Network topology
@@ -71,7 +89,7 @@ If you prefer to use `docker-compose` please refer to the [documentation](docs/d
 
 * Create an environment variable with the name DEBUG and value of 1 to enable debug output (using "docker -e").
 
-        docker run -v $OVPN_DATA:/etc/openvpn -p 1194:1194/udp --privileged -e DEBUG=1 kylemanna/openvpn
+        docker run -v $OVPN_DATA:/etc/openvpn -p 1194:1194/udp --privileged -e DEBUG=1 ctf_vpn_docker
 
 * Test using a client that has openvpn installed correctly
 
@@ -79,6 +97,8 @@ If you prefer to use `docker-compose` please refer to the [documentation](docs/d
 
 * Run through a barrage of debugging checks on the client if things don't just work
 
+        $ ping 192.168.254.1 # checks if you can connect to the VPN server
+        $ ping ${CTF_SUBNET} # checks if you can connect to the CTF subnet
         $ ping 8.8.8.8    # checks connectivity without touching name resolution
         $ dig google.com  # won't use the search directives in resolv.conf
         $ nslookup google.com # will use search
@@ -188,24 +208,6 @@ compromise of the server.  There are many arguments surrounding this, but the
 take away is that it certainly makes it more difficult to break out of the
 container.  People are actively working on Linux containers to make this more
 of a guarantee in the future.
-
-## Differences from jpetazzo/dockvpn
-
-* No longer uses serveconfig to distribute the configuration via https
-* Proper PKI support integrated into image
-* OpenVPN config files, PKI keys and certs are stored on a storage
-  volume for re-use across containers
-* Addition of tls-auth for HMAC security
-
-## Originally Tested On
-
-* Docker hosts:
-  * server a [Digital Ocean](https://www.digitalocean.com/?refcode=d19f7fe88c94) Droplet with 512 MB RAM running Ubuntu 14.04
-* Clients
-  * Android App OpenVPN Connect 1.1.14 (built 56)
-     * OpenVPN core 3.0 android armv7a thumb2 32-bit
-  * OS X Mavericks with Tunnelblick 3.4beta26 (build 3828) using openvpn-2.3.4
-  * ArchLinux OpenVPN pkg 2.3.4-1
 
 
 ## License
