@@ -1,51 +1,49 @@
-# OpenVPN for Docker
+# OpenVPN for CTF
 
-[![Build Status](https://travis-ci.org/kylemanna/docker-openvpn.svg)](https://travis-ci.org/kylemanna/docker-openvpn)
-[![Docker Stars](https://img.shields.io/docker/stars/kylemanna/openvpn.svg)](https://hub.docker.com/r/kylemanna/openvpn/)
-[![Docker Pulls](https://img.shields.io/docker/pulls/kylemanna/openvpn.svg)](https://hub.docker.com/r/kylemanna/openvpn/)
-[![ImageLayers](https://images.microbadger.com/badges/image/kylemanna/openvpn.svg)](https://microbadger.com/#/images/kylemanna/openvpn)
-[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fkylemanna%2Fdocker-openvpn.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fkylemanna%2Fdocker-openvpn?ref=badge_shield)
-[![Anchore Image Overview](https://anchore.io/service/badges/image/af41b351247fc340958e9c67aed342860da328339257f809c043c865679d981d)](https://anchore.io/image/dockerhub/kylemanna%2Fopenvpn%3Alatest)
-
-
-OpenVPN server in a Docker container complete with an EasyRSA PKI CA.
-
-Extensively tested on [Digital Ocean $5/mo node](http://bit.ly/1C7cKr3) and has
-a corresponding [Digital Ocean Community Tutorial](http://bit.ly/1AGUZkq).
+This is a OpenVPN server used in CTF offline match, this docker allow players in 
+the external network accessing the game intranet without barriers.
 
 #### Upstream Links
-
-* Docker Registry @ [kylemanna/openvpn](https://hub.docker.com/r/kylemanna/openvpn/)
 * GitHub @ [kylemanna/docker-openvpn](https://github.com/kylemanna/docker-openvpn)
 
 ## Quick Start
+* Build the docker in order to use it.
+
+        git clone https://github.com/yuguorui/docker-openvpn.git
+        docker build . -t ctf_vpn_docker
 
 * Pick a name for the `$OVPN_DATA` data volume container. It's recommended to
   use the `ovpn-data-` prefix to operate seamlessly with the reference systemd
   service.  Users are encourage to replace `example` with a descriptive name of
   their choosing.
 
-        OVPN_DATA="ovpn-data-example"
+        OVPN_DATA="vpn_data"
 
 * Initialize the `$OVPN_DATA` container that will hold the configuration files
-  and certificates.  The container will prompt for a passphrase to protect the
-  private key used by the newly generated certificate authority.
+  and certificates.
 
         docker volume create --name $OVPN_DATA
-        docker run -v $OVPN_DATA:/etc/openvpn --log-driver=none --rm kylemanna/openvpn ovpn_genconfig -u udp://VPN.SERVERNAME.COM
-        docker run -v $OVPN_DATA:/etc/openvpn --log-driver=none --rm -it kylemanna/openvpn ovpn_initpki
+        docker run -v $OVPN_DATA:/etc/openvpn --log-driver=none --rm ctf_vpn_docker -u udp://YOUR_VPS_ADDRESS nopass
+        docker run -v $OVPN_DATA:/etc/openvpn --log-driver=none --rm -it ctf_vpn_docker ovpn_initpki
 
 * Start OpenVPN server process
 
-        docker run -v $OVPN_DATA:/etc/openvpn -d -p 1194:1194/udp --cap-add=NET_ADMIN kylemanna/openvpn
+        docker run -v $OVPN_DATA:/etc/openvpn -d -p 1194:1194/udp --cap-add=NET_ADMIN --name ctf_vpn ctf_vpn_docker
 
-* Generate a client certificate without a passphrase
+* Add new iroute to access the intranet and restart the docker.
 
-        docker run -v $OVPN_DATA:/etc/openvpn --log-driver=none --rm -it kylemanna/openvpn easyrsa build-client-full CLIENTNAME nopass
+        docker run -v $OVPN_DATA:/etc/openvpn --log-driver=none --rm -it ctf_vpn_docker ovpn_addiroute NETWORK_ID MASK
+        docker restart ctf_vpn
 
-* Retrieve the client configuration with embedded certificates
+* Generate a router certificate without a passphrase (DO NOT CHANGE THE CERTIFICATE NAME "router")
 
-        docker run -v $OVPN_DATA:/etc/openvpn --log-driver=none --rm kylemanna/openvpn ovpn_getclient CLIENTNAME > CLIENTNAME.ovpn
+        docker run -v $OVPN_DATA:/etc/openvpn --log-driver=none --rm -it ctf_vpn_docker easyrsa build-client-full router nopass
+        docker run -v $OVPN_DATA:/etc/openvpn --log-driver=none --rm ctf_vpn_docker ovpn_getclient router > router.ovpn
+
+* Generate a player certificate without a passphrase
+
+        docker run -v $OVPN_DATA:/etc/openvpn --log-driver=none --rm -it ctf_vpn_docker easyrsa build-client-full player nopass
+        docker run -v $OVPN_DATA:/etc/openvpn --log-driver=none --rm ctf_vpn_docker ovpn_getclient player > player.ovpn
 
 ## Next Steps
 

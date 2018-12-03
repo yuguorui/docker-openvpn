@@ -1,0 +1,17 @@
+#!/bin/bash
+
+set -e
+if [ -z "${OPENVPN}" ]; then
+	export OPENVPN="$PWD"
+fi
+
+OVPN_ENV=${OPENVPN}/ovpn_env.sh
+# Import existing configuration if present
+[ -r "$OVPN_ENV" ] && source "$OVPN_ENV"
+
+conf=${OPENVPN}/openvpn.conf
+router_ccd=${OPENVPN}/ccd/router
+
+
+echo "" > ${router_ccd}
+sed '/###IROUTE_START###/,/###IROUTE_END###/d' -i ${conf}

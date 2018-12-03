@@ -1,0 +1,26 @@
+#!/bin/bash
+
+set -e
+if [ -z "${OPENVPN}" ]; then
+	export OPENVPN="$PWD"
+fi
+
+OVPN_ENV=${OPENVPN}/ovpn_env.sh
+# Import existing configuration if present
+[ -r "$OVPN_ENV" ] && source "$OVPN_ENV"
+
+conf=${OPENVPN}/openvpn.conf
+router_ccd=${OPENVPN}/ccd/router
+
+if [ "$#" -ne 2 ]; then
+    echo "Illegal number of parameters"
+	echo "usage: ovpn_addroute network_id netmask"
+	exit 1
+fi
+
+echo "iroute ${1} ${2}" >> ${router_ccd}
+
+echo "###IROUTE_START###" >> ${conf}
+echo "route ${1} ${2}" >> ${conf}
+echo "push \"route ${1} ${2}\"" >> ${conf}
+echo "###IROUTE_END###" >> ${conf}

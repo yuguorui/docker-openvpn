@@ -143,15 +143,16 @@ if [ -z "${EASYRSA_PKI:-}" ]; then
 fi
 
 OVPN_AUTH=''
-OVPN_CIPHER=''
-OVPN_CLIENT_TO_CLIENT=''
+OVPN_CIPHER='AES-256-CBC'
+OVPN_CLIENT_TO_CLIENT='1'
 OVPN_CN=''
 OVPN_COMP_LZO=0
-OVPN_DEFROUTE=1
+# no default route in default
+OVPN_DEFROUTE=0
 OVPN_DEVICE="tun"
 OVPN_DEVICEN=0
-OVPN_DISABLE_PUSH_BLOCK_DNS=0
-OVPN_DNS=1
+OVPN_DISABLE_PUSH_BLOCK_DNS=1
+OVPN_DNS=0
 OVPN_DNS_SERVERS=()
 OVPN_ENV=${OPENVPN}/ovpn_env.sh
 OVPN_EXTRA_CLIENT_CONFIG=()
@@ -283,9 +284,9 @@ else
     exit 1
 fi
 
-# Apply defaults. If dns servers were not defined with -n, use google nameservers
+# Apply defaults. If dns servers were not defined with -n, use 1.1.1.1 nameservers
 set +u
-[ -z "$OVPN_DNS_SERVERS" ] && OVPN_DNS_SERVERS=("8.8.8.8" "8.8.4.4")
+[ -z "$OVPN_DNS_SERVERS" ] && OVPN_DNS_SERVERS=("1.1.1.1" "114.114.114.114")
 [ -z "$OVPN_PROTO" ] && OVPN_PROTO=udp
 [ -z "$OVPN_PORT" ] && OVPN_PORT=1194
 set -u
@@ -329,7 +330,8 @@ key-direction 0
 keepalive $OVPN_KEEPALIVE
 persist-key
 persist-tun
-
+client-config-dir ccd
+duplicate-cn
 proto $OVPN_PROTO
 # Rely on Docker to do port mapping, internally always 1194
 port 1194
@@ -343,6 +345,7 @@ EOF
 if [ "${OVPN_DISABLE_PUSH_BLOCK_DNS}" == "1" ]; then
   echo "Disable default push of 'block-outside-dns'"
 else
+  echo ${OVPN_DISABLE_PUSH_BLOCK_DNS}
   process_push_config "block-outside-dns"
 fi
 
