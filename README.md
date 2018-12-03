@@ -9,8 +9,8 @@ the external network accessing the game intranet without barriers.
 ## Quick Start
 * Build the docker in order to use it.
 
-        git clone https://github.com/yuguorui/docker-openvpn.git
-        cd docker-openvpn/
+        git clone https://github.com/yuguorui/docker-offline-game-vpn
+        cd docker-offline-game-vpn/
         docker build . -t ctf_vpn_docker
 
 * Pick a name for the `$OVPN_DATA` data volume container. It's recommended to
