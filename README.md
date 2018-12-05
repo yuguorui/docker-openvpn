@@ -47,14 +47,19 @@ the external network accessing the game intranet without barriers.
         docker run -v $OVPN_DATA:/etc/openvpn --log-driver=none --rm ctf_vpn_docker ovpn_getclient player > player.ovpn
 
 * Configure the Server(router or PC) in the playing field (used the file `router.ovpn` generated in last step)
-
+        
+        # Allow forward packets in kernel
+        sysctl -w net.ipv4.ip_forward=1
         # Install OpenVPN client
         apt update && apt install openvpn
         # Run VPN client
         nohup openvpn --config router.ovpn &
         # Configure the iptables
-        iptables -t filter -I FORWARD -i tun -o eth0 -j ACCEPT  # Attention: eth0 is your WAN port, you should modify the interface to fit your need.
-        iptables -t nat -I POSTROUTING -o eth0 -j MASQUERADE    # Again, eth0 is your WAN interface.
+        tun_interface=tun0 # Attention: tun0 is your tun port, you should modify the interface to fit your need.
+        wan_interface=eth0 # Attention: eth0 is your WAN port, you should modify the interface to fit your need.
+        iptables -t filter -I FORWARD -i ${tun_interface} -o ${wan_interface} -j ACCEPT
+        iptables -t filter -I FORWARD -i ${wan_interface} -o ${tun_interface} -j ACCEPT # Dual direction
+        iptables -t nat -I POSTROUTING -o ${wan_interface} -j MASQUERADE # setting SNAT
 
 * Configure the client of offline player (used the file `player.ovpn` generated in last step, and you should distribute the `player.ovpn` file to your team members.)
 
@@ -102,7 +107,7 @@ If you prefer to use `docker-compose` please refer to the [documentation](docs/d
 
         $ openvpn --config CLIENTNAME.ovpn
 
-* Run through a barrage of debugging checks on the client if things don't just work
+* Run through a barrage of debugging checks on the client if things don't just work (run in the docker)
 
         $ ping 192.168.255.1 # checks if you can connect to the VPN server
         $ ping ${CTF_SUBNET} # checks if you can connect to the CTF subnet
