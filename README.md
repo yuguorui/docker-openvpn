@@ -50,16 +50,19 @@ the external network accessing the game intranet without barriers.
         
         # Allow forward packets in kernel
         sysctl -w net.ipv4.ip_forward=1
+        
         # Install OpenVPN client
         apt update && apt install openvpn
+        
         # Run VPN client
         nohup openvpn --config router.ovpn &
+
         # Configure the iptables
-        tun_interface=tun0 # Attention: tun0 is your tun port, you should modify the interface to fit your need.
-        wan_interface=eth0 # Attention: eth0 is your WAN port, you should modify the interface to fit your need.
+        tun_interface=tun0      # Attention: tun0 is your tun interface, you should modify the interface to fit your need.
+        wan_interface=eth0      # eth0 is your WAN interface
         iptables -t filter -I FORWARD -i ${tun_interface} -o ${wan_interface} -j ACCEPT
-        iptables -t filter -I FORWARD -i ${wan_interface} -o ${tun_interface} -j ACCEPT # Dual direction
-        iptables -t nat -I POSTROUTING -o ${wan_interface} -j MASQUERADE # setting SNAT
+        iptables -t filter -I FORWARD -i ${wan_interface} -o ${tun_interface} -j ACCEPT         # Dual direction
+        iptables -t nat -I POSTROUTING -o ${wan_interface} -j MASQUERADE                        # setting SNAT
 
 * Configure the client of offline player (used the file `player.ovpn` generated in last step, and you should distribute the `player.ovpn` file to your team members.)
 
