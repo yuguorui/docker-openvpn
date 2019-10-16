@@ -7,76 +7,36 @@ the external network accessing the game intranet without barriers.
 * GitHub @ [kylemanna/docker-openvpn](https://github.com/kylemanna/docker-openvpn)
 
 ## Quick Start
-* Build the docker in order to use it.
 
-        git clone https://github.com/yuguorui/docker-offline-game-vpn
-        cd docker-offline-game-vpn/
-        docker build . -t ctf_vpn_docker
+### Configure VPS
 
-* Pick a name for the `$OVPN_DATA` data volume container. It's recommended to
-  use the `ovpn-data-` prefix to operate seamlessly with the reference systemd
-  service.  Users are encourage to replace `example` with a descriptive name of
-  their choosing.
+> should be accessable from both the on-site players and the off-site players
 
-        OVPN_DATA="vpn_data"
+1. export some variables:
+1. just run `make init` and follow the command-line prompts
+1. boot up with `make start` or `docker-compose up -d`
 
-* Initialize the `$OVPN_DATA` container that will hold the configuration files
-  and certificates.
+> the variables to be exported are:
 
-        docker volume create --name $OVPN_DATA
-        docker run -v $OVPN_DATA:/etc/openvpn --log-driver=none --rm ctf_vpn_docker ovpn_genconfig -u udp://YOUR_VPS_ADDRESS:4242
-        docker run -v $OVPN_DATA:/etc/openvpn --log-driver=none --rm -it ctf_vpn_docker ovpn_initpki nopass
+|name|description|
+|-|-|
+|HOST|your vps's IP address|
+|PORT|some spare port on your vps|
+|NETWORK_ID/MASK|on-site challenge network|
 
-* Start OpenVPN server process
+>The input format of the NETWORK_ID/MASK:  
+>       NETWORK_ID is 192.168.1.0 and MASK is 255.255.255.0 if the game's running under 192.168.1.*
 
-        docker run -v $OVPN_DATA:/etc/openvpn -d -p 4242:1194/udp --cap-add=NET_ADMIN --name ctf_vpn ctf_vpn_docker
+### Configure On-site Router
 
-* Add new iroute to access the intranet and restart the docker. (You have to figure out the CTF subnet range to make the VPN work.)
+>a raspi, maybe?
+1. download the generated `router.ovpn` on the vps
+1. run the script `router.sh`, look into it before running!
 
-        docker run -v $OVPN_DATA:/etc/openvpn --log-driver=none --rm -it ctf_vpn_docker ovpn_addiroute NETWORK_ID MASK
-        docker restart ctf_vpn
+### ~~Configure~~ Off-site Clients
 
-* Generate a router certificate without a passphrase (DO NOT CHANGE THE CERTIFICATE NAME "router")
-
-        docker run -v $OVPN_DATA:/etc/openvpn --log-driver=none --rm -it ctf_vpn_docker easyrsa build-client-full router nopass
-        docker run -v $OVPN_DATA:/etc/openvpn --log-driver=none --rm ctf_vpn_docker ovpn_getclient router > router.ovpn
-
-* Generate a player certificate without a passphrase
-
-        docker run -v $OVPN_DATA:/etc/openvpn --log-driver=none --rm -it ctf_vpn_docker easyrsa build-client-full player nopass
-        docker run -v $OVPN_DATA:/etc/openvpn --log-driver=none --rm ctf_vpn_docker ovpn_getclient player > player.ovpn
-
-* Configure the Server(router or PC) in the playing field (used the file `router.ovpn` generated in last step)
-        
-        # Allow forward packets in kernel
-        sysctl -w net.ipv4.ip_forward=1
-        
-        # Install OpenVPN client
-        apt update && apt install openvpn
-        
-        # Run VPN client
-        nohup openvpn --config router.ovpn &
-
-        # Configure the iptables
-        tun_interface=tun0      # Attention: tun0 is your tun interface, you should modify the interface to fit your need.
-        wan_interface=eth0      # eth0 is your WAN interface
-        iptables -t filter -I FORWARD -i ${tun_interface} -o ${wan_interface} -j ACCEPT
-        iptables -t filter -I FORWARD -i ${wan_interface} -o ${tun_interface} -j ACCEPT         # Dual direction
-        iptables -t nat -I POSTROUTING -o ${wan_interface} -j MASQUERADE                        # setting SNAT
-
-* Configure the client of offline player (used the file `player.ovpn` generated in last step, and you should distribute the `player.ovpn` file to your team members.)
-
-        # Install OpenVPN client
-        apt update && apt install openvpn
-        # Run VPN client
-        nohup openvpn --config player.ovpn &
-        # It's OK!
-
-* Clear the iroute to reconfigure
-
-        docker run -v $OVPN_DATA:/etc/openvpn --log-driver=none --rm -it ctf_vpn_docker ovpn_cleariroute
-        docker restart ctf_vpn
-        # Now, you can re-add new iroute rules.
+1. download the generated `player.ovpn` on the vps
+1. drop the file into a OpenVPN client and start H@ck1ng
 
 ## Next Steps
 
@@ -95,10 +55,6 @@ start the container on system boot, restart the container if it exits
 unexpectedly, and pull updates from Docker Hub to keep itself up to date.
 
 Please refer to the [systemd documentation](docs/systemd.md) to learn more.
-
-### Docker Compose
-
-If you prefer to use `docker-compose` please refer to the [documentation](docs/docker-compose.md).
 
 ## Debugging Tips
 
