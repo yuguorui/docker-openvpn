@@ -15,6 +15,7 @@ the external network accessing the game intranet without barriers.
 1. export some variables:
 1. just run `make init` and follow the command-line prompts
 1. boot up with `make start` or `docker-compose up -d`
+1. generate ovpn profiles (player/router.ovpn) with `make gen_config`
 
 > the variables to be exported are:
 
@@ -47,6 +48,7 @@ export NETWORK_ID=?
 export MASK=?
 make reset
 make start
+make gen_config
 ```
 
 ### Network topology
