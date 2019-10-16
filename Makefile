@@ -28,7 +28,6 @@ start:
 	docker-compose up -d vpn
 
 stop:
-	screen -S openvpn -X quit
 	docker-compose down
 
 reset:

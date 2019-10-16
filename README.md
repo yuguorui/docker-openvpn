@@ -40,6 +40,15 @@ the external network accessing the game intranet without barriers.
 
 ## Next Steps
 
+### Reusing
+
+```bash
+export NETWORK_ID=?
+export MASK=?
+make reset
+make start
+```
+
 ### Network topology
 ![Network topology](imgs/Network_topology.svg)
 
